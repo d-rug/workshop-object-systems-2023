@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.475">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>4&nbsp; How S3 and S4 methods work</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./03_S3_vs_S4.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+    <div class="container-fluid d-flex justify-content-between">
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">How S3 and S4 methods work</span></h1>
+      <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse sidebar-navigation floating overflow-auto">
+      <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+      </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">R’s object systems</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01_Introduction.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02_Example.html" class="sidebar-item-text sidebar-link">Example: penguins</a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_S3_vs_S4.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">S3 vs S4</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04_Commonalities.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">How S3 and S4 methods work</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">How S3 and S4 methods work</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>Both S3 and S4 accomplish the goals of encapsulation and polymorphism. In fact, the polymorphism is accomplished in nearly the same way.</p>
+<p>In object-oriented programming, a <em><code>method</code></em> is a function that belongs to an object. R’s handling of methods is an extremely important way that the language is flexible and intuitive. When you call the <code>plot()</code> function, you call a generic method that decides what specific method should be used based on the object’s class name. First, let’s recall that you can see the code for a function by writing the function name without parentheses:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># function without parentheses prints the code:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>function (x, y, ...) 
+UseMethod("plot")
+&lt;bytecode: 0x7f7f782f3b58&gt;
+&lt;environment: namespace:base&gt;</code></pre>
+</div>
+</div>
+<p>The <code>UseMethod("plot")</code> part causes R to select from all the functions named like <code>plot.&lt;classname&gt;()</code>, which you can list this way:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">methods</span>(plot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] plot.acf*           plot.data.frame*    plot.decomposed.ts*
+ [4] plot.default        plot.dendrogram*    plot.density*      
+ [7] plot.ecdf           plot.factor*        plot.formula*      
+[10] plot.function       plot.hclust*        plot.histogram*    
+[13] plot.HoltWinters*   plot.isoreg*        plot.lm*           
+[16] plot.medpolish*     plot.mlm*           plot.ppr*          
+[19] plot.prcomp*        plot.princomp*      plot.profile.nls*  
+[22] plot.raster*        plot.spec*          plot.stepfun       
+[25] plot.stl*           plot.table*         plot.ts            
+[28] plot.tskernel*      plot.TukeyHSD*     
+see '?methods' for accessing help and source code</code></pre>
+</div>
+</div>
+<p>Let’s see the code that actually does the work of <code>plot.lm()</code> and <code>plot.merMod()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">:::</span>plot.lm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>function (x, which = c(1, 2, 3, 5), caption = list("Residuals vs Fitted", 
+    "Normal Q-Q", "Scale-Location", "Cook's distance", "Residuals vs Leverage", 
+    expression("Cook's dist vs Leverage* " * h[ii]/(1 - h[ii]))), 
+    panel = if (add.smooth) function(x, y, ...) panel.smooth(x, 
+        y, iter = iter.smooth, ...) else points, sub.caption = NULL, 
+    main = "", ask = prod(par("mfcol")) &lt; length(which) &amp;&amp; dev.interactive(), 
+    ..., id.n = 3, labels.id = names(residuals(x)), cex.id = 0.75, 
+    qqline = TRUE, cook.levels = c(0.5, 1), cook.col = 8, cook.lty = 2, 
+    cook.legendChanges = list(), add.smooth = getOption("add.smooth"), 
+    iter.smooth = if (isGlm) 0 else 3, label.pos = c(4, 2), cex.caption = 1, 
+    cex.oma.main = 1.25, extend.ylim.f = 0.08) 
+{
+    dropInf &lt;- function(x, h) {
+        if (any(isInf &lt;- h &gt;= 1)) {
+            warning(gettextf("not plotting observations with leverage one:\n  %s", 
+                paste(which(isInf), collapse = ", ")), call. = FALSE, 
+                domain = NA)
+            x[isInf] &lt;- NaN
+        }
+        x
+    }
+    if (!inherits(x, "lm")) 
+        stop("use only with \"lm\" objects")
+    if (!is.numeric(which) || any(which &lt; 1) || any(which &gt; 6)) 
+        stop("'which' must be in 1:6")
+    if ((isGlm &lt;- inherits(x, "glm"))) 
+        binomialLike &lt;- family(x)$family == "binomial"
+    show &lt;- rep(FALSE, 6)
+    show[which] &lt;- TRUE
+    r &lt;- if (isGlm) 
+        residuals(x, type = "pearson")
+    else residuals(x)
+    yh &lt;- predict(x)
+    w &lt;- weights(x)
+    if (!is.null(w)) {
+        wind &lt;- w != 0
+        r &lt;- r[wind]
+        yh &lt;- yh[wind]
+        w &lt;- w[wind]
+        labels.id &lt;- labels.id[wind]
+    }
+    n &lt;- length(r)
+    if (any(show[2L:6L])) {
+        s &lt;- if (inherits(x, "rlm")) 
+            x$s
+        else if (isGlm) 
+            sqrt(summary(x)$dispersion)
+        else sqrt(deviance(x)/df.residual(x))
+        hii &lt;- (infl &lt;- influence(x, do.coef = FALSE))$hat
+        if (any(show[4L:6L])) {
+            cook &lt;- cooks.distance(x, infl)
+        }
+    }
+    if (any(show[c(2L, 3L, 5L)])) {
+        ylab5 &lt;- ylab23 &lt;- if (isGlm) 
+            "Std. Pearson resid."
+        else "Standardized residuals"
+        rs &lt;- dropInf(if (isGlm) 
+            rstandard(x, type = "pearson")
+        else (if (is.null(w)) 
+            r
+        else sqrt(w) * r)/(s * sqrt(1 - hii)), hii)
+    }
+    if (any(show[5L:6L])) {
+        r.hat &lt;- range(hii, na.rm = TRUE)
+        isConst.hat &lt;- all(r.hat == 0) || diff(r.hat) &lt; 1e-10 * 
+            mean(hii, na.rm = TRUE)
+    }
+    if (any(show[c(1L, 3L)])) 
+        l.fit &lt;- if (isGlm) 
+            "Predicted values"
+        else "Fitted values"
+    if (is.null(id.n)) 
+        id.n &lt;- 0L
+    else {
+        id.n &lt;- as.integer(id.n)
+        if (id.n &lt; 0L || id.n &gt; n) 
+            stop(gettextf("'id.n' must be in {1,..,%d}", n), 
+                domain = NA)
+    }
+    if (id.n &gt; 0L) {
+        if (is.null(labels.id)) 
+            labels.id &lt;- paste(1L:n)
+        iid &lt;- 1L:id.n
+        show.r &lt;- sort.list(abs(r), decreasing = TRUE)[iid]
+        if (any(show[2L:3L])) 
+            show.rs &lt;- sort.list(abs(rs), decreasing = TRUE)[iid]
+        text.id &lt;- function(x, y, ind, adj.x = TRUE, usr = par("usr")) {
+            labpos &lt;- if (adj.x) 
+                label.pos[(x &gt; mean(usr[1:2])) + 1L]
+            else 3
+            text(x, y, labels.id[ind], cex = cex.id, xpd = TRUE, 
+                pos = labpos, offset = 0.25)
+        }
+    }
+    getCaption &lt;- function(k) if (length(caption) &lt; k) 
+        NA_character_
+    else as.graphicsAnnot(caption[[k]])
+    if (is.null(sub.caption)) {
+        cal &lt;- x$call
+        if (!is.na(m.f &lt;- match("formula", names(cal)))) {
+            cal &lt;- cal[c(1, m.f)]
+            names(cal)[2L] &lt;- ""
+        }
+        cc &lt;- deparse(cal, 80)
+        nc &lt;- nchar(cc[1L], "c")
+        abbr &lt;- length(cc) &gt; 1 || nc &gt; 75
+        sub.caption &lt;- if (abbr) 
+            paste(substr(cc[1L], 1L, min(75L, nc)), "...")
+        else cc[1L]
+    }
+    one.fig &lt;- prod(par("mfcol")) == 1
+    if (ask) {
+        oask &lt;- devAskNewPage(TRUE)
+        on.exit(devAskNewPage(oask))
+    }
+    if (show[1L]) {
+        ylim &lt;- range(r, na.rm = TRUE)
+        if (id.n &gt; 0) 
+            ylim &lt;- extendrange(r = ylim, f = extend.ylim.f)
+        dev.hold()
+        plot(yh, r, xlab = l.fit, ylab = "Residuals", main = main, 
+            ylim = ylim, type = "n", ...)
+        panel(yh, r, ...)
+        if (one.fig) 
+            title(sub = sub.caption, ...)
+        mtext(getCaption(1), 3, 0.25, cex = cex.caption)
+        if (id.n &gt; 0) {
+            y.id &lt;- r[show.r]
+            y.id[y.id &lt; 0] &lt;- y.id[y.id &lt; 0] - strheight(" ")/3
+            text.id(yh[show.r], y.id, show.r)
+        }
+        abline(h = 0, lty = 3, col = "gray")
+        dev.flush()
+    }
+    if (show[2L]) {
+        ylim &lt;- range(rs, na.rm = TRUE)
+        ylim[2L] &lt;- ylim[2L] + diff(ylim) * 0.075
+        dev.hold()
+        qq &lt;- qqnorm(rs, main = main, ylab = ylab23, ylim = ylim, 
+            ...)
+        if (qqline) 
+            qqline(rs, lty = 3, col = "gray50")
+        if (one.fig) 
+            title(sub = sub.caption, ...)
+        mtext(getCaption(2), 3, 0.25, cex = cex.caption)
+        if (id.n &gt; 0) 
+            text.id(qq$x[show.rs], qq$y[show.rs], show.rs)
+        dev.flush()
+    }
+    if (show[3L]) {
+        sqrtabsr &lt;- sqrt(abs(rs))
+        ylim &lt;- c(0, max(sqrtabsr, na.rm = TRUE))
+        yl &lt;- as.expression(substitute(sqrt(abs(YL)), list(YL = as.name(ylab23))))
+        yhn0 &lt;- if (is.null(w)) 
+            yh
+        else yh[w != 0]
+        dev.hold()
+        plot(yhn0, sqrtabsr, xlab = l.fit, ylab = yl, main = main, 
+            ylim = ylim, type = "n", ...)
+        panel(yhn0, sqrtabsr, ...)
+        if (one.fig) 
+            title(sub = sub.caption, ...)
+        mtext(getCaption(3), 3, 0.25, cex = cex.caption)
+        if (id.n &gt; 0) 
+            text.id(yhn0[show.rs], sqrtabsr[show.rs], show.rs)
+        dev.flush()
+    }
+    if (show[4L]) {
+        if (id.n &gt; 0) {
+            show.r &lt;- order(-cook)[iid]
+            ymx &lt;- cook[show.r[1L]] * 1.075
+        }
+        else ymx &lt;- max(cook, na.rm = TRUE)
+        dev.hold()
+        plot(cook, type = "h", ylim = c(0, ymx), main = main, 
+            xlab = "Obs. number", ylab = "Cook's distance", ...)
+        if (one.fig) 
+            title(sub = sub.caption, ...)
+        mtext(getCaption(4), 3, 0.25, cex = cex.caption)
+        if (id.n &gt; 0) 
+            text.id(show.r, cook[show.r], show.r, adj.x = FALSE)
+        dev.flush()
+    }
+    if (show[5L]) {
+        ylim &lt;- range(rs, na.rm = TRUE)
+        if (id.n &gt; 0) {
+            ylim &lt;- extendrange(r = ylim, f = extend.ylim.f)
+            show.rs &lt;- order(-cook)[iid]
+        }
+        do.plot &lt;- TRUE
+        if (isConst.hat) {
+            if (missing(caption)) 
+                caption[[5L]] &lt;- "Constant Leverage:\n Residuals vs Factor Levels"
+            if (nf &lt;- length(xlev &lt;- x$xlevels)) {
+                facvars &lt;- names(xlev)
+                mf &lt;- model.frame(x)[facvars]
+                dm &lt;- data.matrix(mf)
+                nlev &lt;- unname(lengths(xlev))
+                ff &lt;- if (nf == 1) 
+                  1
+                else rev(cumprod(c(1, nlev[nf:2])))
+                facval &lt;- (dm - 1) %*% ff
+                xx &lt;- facval
+                dev.hold()
+                plot(facval, rs, xlim = c(-1/2, sum((nlev - 1) * 
+                  ff) + 1/2), ylim = ylim, xaxt = "n", main = main, 
+                  xlab = "Factor Level Combinations", ylab = ylab5, 
+                  type = "n", ...)
+                axis(1, at = ff[1L] * (1L:nlev[1L] - 1/2) - 1/2, 
+                  labels = xlev[[1L]])
+                mtext(paste(facvars[1L], ":"), side = 1, line = 0.25, 
+                  adj = -0.05)
+                abline(v = ff[1L] * (0:nlev[1L]) - 1/2, col = "gray", 
+                  lty = "F4")
+                panel(facval, rs, ...)
+                abline(h = 0, lty = 3, col = "gray")
+                dev.flush()
+            }
+            else {
+                message(gettextf("hat values (leverages) are all = %s\n and there are no factor predictors; no plot no. 5", 
+                  format(mean(r.hat))), domain = NA)
+                frame()
+                do.plot &lt;- FALSE
+            }
+        }
+        else {
+            xx &lt;- hii
+            xx[xx &gt;= 1] &lt;- NA
+            dev.hold()
+            plot(xx, rs, xlim = c(0, max(xx, na.rm = TRUE)), 
+                ylim = ylim, main = main, xlab = "Leverage", 
+                ylab = ylab5, type = "n", ...)
+            panel(xx, rs, ...)
+            abline(h = 0, v = 0, lty = 3, col = "gray")
+            if (one.fig) 
+                title(sub = sub.caption, ...)
+            if (length(cook.levels)) {
+                p &lt;- x$rank
+                usr2 &lt;- par("usr")[2L]
+                hh &lt;- seq.int(min(r.hat[1L], r.hat[2L]/100), 
+                  usr2, length.out = 101)
+                for (crit in cook.levels) {
+                  cl.h &lt;- sqrt(crit * p * (1 - hh)/hh)
+                  lines(hh, cl.h, lty = cook.lty, col = cook.col)
+                  lines(hh, -cl.h, lty = cook.lty, col = cook.col)
+                }
+                if (!is.null(cook.legendChanges)) 
+                  do.call(legend, modifyList(list(x = "bottomleft", 
+                    legend = "Cook's distance", lty = cook.lty, 
+                    col = cook.col, text.col = cook.col, bty = "n", 
+                    x.intersp = 1/4, y.intersp = 1/8), cook.legendChanges))
+                xmax &lt;- min(0.99, usr2)
+                ymult &lt;- sqrt(p * (1 - xmax)/xmax)
+                aty &lt;- sqrt(cook.levels) * ymult
+                axis(4, at = c(-rev(aty), aty), labels = paste(c(rev(cook.levels), 
+                  cook.levels)), mgp = c(0.25, 0.25, 0), las = 2, 
+                  tck = 0, cex.axis = cex.id, col.axis = cook.col)
+            }
+            dev.flush()
+        }
+        if (do.plot) {
+            mtext(getCaption(5), 3, 0.25, cex = cex.caption)
+            if (id.n &gt; 0) {
+                y.id &lt;- rs[show.rs]
+                y.id[y.id &lt; 0] &lt;- y.id[y.id &lt; 0] - strheight(" ")/3
+                text.id(xx[show.rs], y.id, show.rs)
+            }
+        }
+    }
+    if (show[6L]) {
+        g &lt;- dropInf(hii/(1 - hii), hii)
+        ymx &lt;- max(cook, na.rm = TRUE) * 1.025
+        dev.hold()
+        plot(g, cook, xlim = c(0, max(g, na.rm = TRUE)), ylim = c(0, 
+            ymx), main = main, ylab = "Cook's distance", xlab = expression("Leverage  " * 
+            h[ii]), xaxt = "n", type = "n", ...)
+        panel(g, cook, ...)
+        athat &lt;- pretty(hii)
+        axis(1, at = athat/(1 - athat), labels = paste(athat))
+        if (one.fig) 
+            title(sub = sub.caption, ...)
+        p &lt;- x$rank
+        bval &lt;- pretty(sqrt(p * cook/g), 5)
+        usr &lt;- par("usr")
+        xmax &lt;- usr[2L]
+        ymax &lt;- usr[4L]
+        for (i in seq_along(bval)) {
+            bi2 &lt;- bval[i]^2
+            if (p * ymax &gt; bi2 * xmax) {
+                xi &lt;- xmax + strwidth(" ")/3
+                yi &lt;- bi2 * xi/p
+                abline(0, bi2, lty = cook.lty)
+                text(xi, yi, paste(bval[i]), adj = 0, xpd = TRUE)
+            }
+            else {
+                yi &lt;- ymax - 1.5 * strheight(" ")
+                xi &lt;- p * yi/bi2
+                lines(c(0, xi), c(0, yi), lty = cook.lty)
+                text(xi, ymax - 0.8 * strheight(" "), paste(bval[i]), 
+                  adj = 0.5, xpd = TRUE)
+            }
+        }
+        mtext(getCaption(6), 3, 0.25, cex = cex.caption)
+        if (id.n &gt; 0) {
+            show.r &lt;- order(-cook)[iid]
+            text.id(g[show.r], cook[show.r], show.r, usr = usr)
+        }
+        dev.flush()
+    }
+    if (!one.fig &amp;&amp; par("oma")[3L] &gt;= 1) 
+        mtext(sub.caption, outer = TRUE, cex = cex.oma.main)
+    invisible()
+}
+&lt;bytecode: 0x7f7f829df350&gt;
+&lt;environment: namespace:stats&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>lme4<span class="sc">:::</span>plot.merMod</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>function (x, form = resid(., type = "pearson") ~ fitted(.), abline, 
+    id = NULL, idLabels = NULL, grid, ...) 
+{
+    object &lt;- x
+    if (!inherits(form, "formula")) 
+        stop("\"form\" must be a formula")
+    allV &lt;- all.vars(asOneFormula(form, id, idLabels))
+    allV &lt;- allV[is.na(match(allV, c("T", "F", "TRUE", "FALSE", 
+        ".obs")))]
+    if (length(allV) &gt; 0) {
+        data &lt;- getData(object)
+        if (is.null(data)) {
+            alist &lt;- lapply(as.list(allV), as.name)
+            names(alist) &lt;- allV
+            alist &lt;- c(list(as.name("data.frame")), alist)
+            mode(alist) &lt;- "call"
+            data &lt;- eval(alist, sys.parent(1))
+        }
+        else if (any(naV &lt;- is.na(match(allV, names(data))))) 
+            stop(allV[naV], " not found in data")
+    }
+    else data &lt;- NULL
+    dots &lt;- list(...)
+    args &lt;- if (length(dots) &gt; 0) 
+        dots
+    else list()
+    data &lt;- as.list(c(as.list(cbind(data, .obs = seq(nrow(data)))), 
+        . = list(object)))
+    covF &lt;- getCovariateFormula(form)
+    .x &lt;- eval(covF[[2]], data)
+    if (!is.numeric(.x)) {
+        stop("Covariate must be numeric")
+    }
+    argForm &lt;- ~.x
+    argData &lt;- data.frame(.x = .x, check.names = FALSE)
+    if (is.null(args$xlab)) {
+        if (is.null(xlab &lt;- attr(.x, "label"))) 
+            xlab &lt;- deparse(covF[[2]])
+        args$xlab &lt;- xlab
+    }
+    respF &lt;- getResponseFormula(form)
+    if (!is.null(respF)) {
+        .y &lt;- eval(respF[[2]], data)
+        if (is.null(args$ylab)) {
+            if (is.null(ylab &lt;- attr(.y, "label"))) 
+                ylab &lt;- deparse(respF[[2]])
+            args$ylab &lt;- ylab
+        }
+        argForm &lt;- .y ~ .x
+        argData[, ".y"] &lt;- .y
+    }
+    grpsF &lt;- getGroupsFormula(form)
+    if (!is.null(grpsF)) {
+        gr &lt;- splitFormula(grpsF, sep = "*")
+        for (i in seq_along(gr)) {
+            auxGr &lt;- all.vars(gr[[i]])
+            for (j in auxGr) argData[[j]] &lt;- eval(as.name(j), 
+                data)
+        }
+        argForm &lt;- as.formula(paste(if (length(argForm) == 2) 
+            "~ .x |"
+        else ".y ~ .x |", deparse(grpsF[[2]])))
+    }
+    args &lt;- c(list(argForm, data = argData), args)
+    if (is.null(args$strip)) {
+        args$strip &lt;- function(...) strip.default(..., style = 1)
+    }
+    if (is.null(args$cex)) 
+        args$cex &lt;- par("cex")
+    if (is.null(args$adj)) 
+        args$adj &lt;- par("adj")
+    if (!is.null(id)) {
+        idResType &lt;- "pearson"
+        id &lt;- switch(mode(id), numeric = {
+            if (id &lt;= 0 || id &gt;= 1) stop(shQuote("id"), " must be between 0 and 1")
+            abs(resid(object, type = idResType))/sigma(object) &gt; 
+                -qnorm(id/2)
+        }, call = eval(asOneSidedFormula(id)[[2]], data), stop(shQuote("id"), 
+            " can only be a formula or numeric."))
+        if (is.null(idLabels)) {
+            idLabels &lt;- getIDLabels(object)
+        }
+        else {
+            if (inherits(idLabels, "formula")) {
+                idLabels &lt;- getIDLabels(object, idLabels)
+            }
+            else if (is.vector(idLabels)) {
+                if (length(idLabels &lt;- unlist(idLabels)) != length(id)) {
+                  stop("\"idLabels\" of incorrect length")
+                }
+            }
+            else stop("\"idLabels\" can only be a formula or a vector")
+        }
+        idLabels &lt;- as.character(idLabels)
+    }
+    if (missing(abline)) {
+        abline &lt;- if (missing(form)) 
+            c(0, 0)
+        else NULL
+    }
+    assign("abl", abline)
+    if (length(argForm) == 3) {
+        if (is.numeric(.y)) {
+            plotFun &lt;- "xyplot"
+            if (is.null(args$panel)) {
+                args &lt;- c(args, panel = list(function(x, y, subscripts, 
+                  ...) {
+                  x &lt;- as.numeric(x)
+                  y &lt;- as.numeric(y)
+                  dots &lt;- list(...)
+                  if (grid) panel.grid()
+                  panel.xyplot(x, y, ...)
+                  if (any(ids &lt;- id[subscripts])) {
+                    ltext(x[ids], y[ids], idLabels[subscripts][ids], 
+                      cex = dots$cex, adj = dots$adj)
+                  }
+                  if (!is.null(abl)) {
+                    if (length(abl) == 2) panel.abline(a = abl, 
+                      ...) else panel.abline(h = abl, ...)
+                  }
+                }))
+            }
+        }
+        else {
+            plotFun &lt;- "bwplot"
+            if (is.null(args$panel)) {
+                args &lt;- c(args, panel = list(function(x, y, ...) {
+                  if (grid) panel.grid()
+                  panel.bwplot(x, y, ...)
+                  if (!is.null(abl)) {
+                    panel.abline(v = abl[1], ...)
+                  }
+                }))
+            }
+        }
+    }
+    else {
+        plotFun &lt;- "histogram"
+        if (is.null(args$panel)) {
+            args &lt;- c(args, panel = list(function(x, ...) {
+                if (grid) panel.grid()
+                panel.histogram(x, ...)
+                if (!is.null(abl)) {
+                  panel.abline(v = abl[1], ...)
+                }
+            }))
+        }
+    }
+    if (missing(grid)) {
+        grid &lt;- (plotFun == "xyplot")
+    }
+    do.call(plotFun, as.list(args))
+}
+&lt;bytecode: 0x7f7f85beb078&gt;
+&lt;environment: namespace:lme4&gt;</code></pre>
+</div>
+</div>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./03_S3_vs_S4.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">S3 vs S4</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+</body></html>

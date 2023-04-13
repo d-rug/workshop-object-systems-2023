@@ -1,0 +1,21 @@
+# Introduction
+As a statistician and data scientist, the objects I interact with most often in R are data frames and regression models. Actually R's numbers and vectors are "objects" of a sort, but not in the sense that they need an object system. You can see the difference here:
+
+```{r is.object}
+# you can check whether something is an object with is.object()
+is.object( c("a", "b", "c") )
+is.object( 13 )
+is.object( data.frame() )
+
+# to be an object means to have a class:
+attr( c("a", "b", "c"), "class")
+attr( 13, "class")
+attr( data.frame(), "class")
+```
+
+**Objects** are the nouns of a computer language. They provide two main functions: *encapsulation* and *polymorphism*. 
+
+ - *Encapsulation*: many different parts can be bundled together into a single object.
+ - *Polymorphism*: you can do many different things using functions that share the same name (e.g., `plot()`).
+ 
+

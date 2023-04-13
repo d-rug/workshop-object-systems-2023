@@ -1,0 +1,92 @@
+# S3 vs S4
+
+
+```{r set-options}
+#| output: false
+#| echo: false
+options(repos=c(CRAN="https://cran.rstudio.com/"))
+library(palmerpenguins)
+data(penguins)
+```
+
+The `lm` object that we saw in the previous example is an object and it uses the S3 object system. The other built-in object system is called S4, which is used by the mixed-effect modeling package `lme4` and the [Bioconductor](https://www.bioconductor.org) packages (common packages: `limma` and `DESeq2` and others for genomic analyses).
+
+
+## S3
+S3 is used by the most common R modeling methods like `lm()` and `glm()`. You access elements of the objects using the dollar-sign, like `my_model$coefficients`.
+
+The S3 object system is *very* loosey-goosey. This happened because R wasn't developed with the intention of having an object system, so S3 was pieced together from parts that were already there in the language, but intended for other purposes. Here is how easy it is to create a whole new S3 class and an object of the class, including members and methods:
+
+```{r s3-example}
+my_obj = list()
+my_obj$a = 1:4
+my_obj$b = 10:7
+
+# turn my_obj into an object by assigning it a class name
+class(my_obj) = "dumb"
+
+# define a plot method for the class
+plot.dumb = function( obj ) plot(obj$a, obj$b)
+plot(my_obj)
+```
+
+
+This flexibility is very liberating, but can also cause problems. There is nothing that enforces the expectation that object of class `dumb` must have members `a` and `b`, so you can crash the `plot()` method:
+
+```{r s3-example-2}
+#| error: true
+obj2 = list()
+obj2$message = "No bloody a, b, or c"
+
+# turn my_obj into an object by assigning it a class name
+class(obj2) = "dumb"
+
+# define a plot method for the class
+plot.dumb = function( obj ) plot(obj$a, obj$b)
+plot(obj2)
+```
+
+The S4 object system was developed in order to impose some order to the chaos.
+
+##S4
+Used by `lme4` and Bioconductor. The S4 object system is much more formal than S3 - a class must be fully defined before it can be used, and objects can only be modified through their methods. We aren't going to create a new S4 class because it is much more complicated that the S3 example. Instead, let's generate a mixed-effects model using the `lmer()` function from the `lme4` package.
+
+```{r install-lme4}
+#| warning: false
+install.packages( "lme4" )
+library(lme4)
+```
+
+```{r create-lmer}
+# estimate the linear, mixed-effects model:
+peng_lme = lmer( body_mass_g ~ species + sex + (1|island), data=penguins )
+```
+
+The easiest way to know that `peng_lme` is an S4 object is that it is listed as a "Formal class" in the "Environment" pane of RStudio.
+
+![This is how an S4 class is listed in the Environment pane of RStudio](img/formal-lmerMod.png){#fig-elephant}
+
+The next most visible difference is that you can't use `$` to access the members that are encapsulated by an S4 class. Instead, you use `@` or the `slot()` function:
+
+```{r lme-slots}
+#| error: true
+# inspect the slot "beta"
+peng_lme@beta
+
+# the preferred way to do the same:
+slot(peng_lme, "beta")
+
+# You get an error if you try using $ to access a slot:
+peng_lme$beta
+```
+
+Another thing you may notice is that you can't change the structure of an S4 object:
+
+```{r lme-immutable}
+#| error: true
+# get an error if you try to conjure a new slot:
+peng_lme@test = 5
+```
+
+
+

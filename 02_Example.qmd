@@ -1,0 +1,57 @@
+# Example: penguins {-}
+Let's look at an example. We will load a dataset and make a regression model.
+
+## Penguin data
+Begin by installing the [`palmerpenguins` package from Allison Horst's Github](https://github.com/allisonhorst/palmerpenguins). Then load the package and import the data.
+```{r load-penguin-data}
+#| warning: false
+#| results: hold
+# install the palmerpenguins package
+remotes::install_github("allisonhorst/palmerpenguins")
+library( "palmerpenguins" )
+data( penguins )
+```
+
+
+## Estimate a linear model
+Here's a common task: estimate a linear regression model for some data. The result is an object (one that uses the S3 system)
+```{r estimate-penguin-model}
+# make a linear regression model:
+penguin_lm = lm( body_mass_g ~ species + sex, data=penguins )
+
+# check the lm object:
+is.object( penguin_lm )
+attr( penguin_lm, "class" )
+class( penguin_lm )
+```
+
+
+## The `plot()` function does more than one thing
+What happens when you call the `plot()` function depends on what kind of object you are plotting. This had to be built into R! Functions only do what they are told, so how can `plot()` do different things?!
+```{r plot-polymorphism}
+# plot the data and the model
+plot( penguins )
+layout( matrix(1:4, 2, 2))
+plot( penguin_lm )
+```
+
+## The `summary()` function does more than one thing
+Similarly, the `summary()` function can do different things depending on what object it works on. On a `data.frame`, `summary()` will summarize each column. Called on a fitted linear model, `summary()` will tell you about the coefficients, their significange levels, and calculate the model's R-squared.
+```{r summary-polymorphism}
+# summarize the data and the model
+summary( penguins )
+summary( penguin_lm )
+```
+
+
+## An `lm` object encapsulates many pieces
+The linear model object `penguin_lm` contains a lot of pieces. You can see the names of the pieces by using the `names()` function.
+```{r lm-encapsulation}
+# access some pieces that are encapsulated in the model:
+names( penguin_lm )
+penguin_lm$coefficients
+penguin_lm$call
+```
+ 
+
+ 

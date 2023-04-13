@@ -1,0 +1,24 @@
+project:
+  type: book
+  output-dir: docs
+
+book:
+  chapters:
+    - index.qmd
+    - 01_Introduction.qmd
+    - 02_Example.qmd
+    - 03_S3_vs_S4.qmd
+    - 04_Commonalities.qmd
+    # - summary.qmd
+    # - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+    html-math-method: katex
+  # acm-pdf:
+  #   toc: true
+
+

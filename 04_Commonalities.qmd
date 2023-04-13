@@ -1,0 +1,25 @@
+# How S3 and S4 methods work
+Both S3 and S4 accomplish the goals of encapsulation and polymorphism. In fact, the polymorphism is accomplished in nearly the same way.
+
+In object-oriented programming, a *`method`* is a function that belongs to an object. R's handling of methods is an extremely important way that the language is flexible and intuitive. When you call the `plot()` function, you call a generic method that decides what specific method should be used based on the object's class name. First, let's recall that you can see the code for a function by writing the function name without parentheses:
+
+```{r plot-introspection}
+# function without parentheses prints the code:
+plot
+```
+
+The `UseMethod("plot")` part causes R to select from all the functions named like `plot.<classname>()`, which you can list this way:
+
+```{r list-methods}
+methods(plot)
+```
+
+Let's see the code that actually does the work of `plot.lm()` and `plot.merMod()`:
+
+```{r plot-code}
+stats:::plot.lm
+
+lme4:::plot.merMod
+```
+
+

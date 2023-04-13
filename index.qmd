@@ -1,0 +1,37 @@
+---
+title: R's object systems
+author: Wesley Brooks
+date: "`r Sys.Date()`"
+
+github-repo: d-rug/workshop-object-systems-2023
+url: "https://d-rug.github.io/workshop-object-systems-2023/"
+
+site: "bookdown::bookdown_site"
+knit: "bookdown::render_book"
+output:
+  bookdown::gitbook:
+    config:
+      toc:
+        before: |
+          <li><a href="https://d-rug.github.io/">
+            <img src="https://github.com/d-rug/d-rug.github.io/raw/main/DRUG_final_cobalt.png" style="height: 100%; width: 100%; object-fit: contain" />
+          </a></li>
+          <li><a href="./" style="font-size: 18px">R's object systems</a></li>
+        after: |
+          <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">
+            <img alt="CC BY-SA 4.0" src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg" style="float: right; padding-right: 10px;" />
+          </a>
+        collapse: section
+      sharing: no
+      view: https://github.com/d-rug/workshop-object-systems-2023/blob/master/%s
+      edit: https://github.com/d-rug/workshop-object-systems-2023/edit/master/%s
+---
+
+# Overview
+This mini-workshop is intended to introduce you to R's object systems. There are actually a lot of them, but we are going to focus on the two or three most important ones. My goal is to answer some very basic questions, like:
+
+ - What is an object system and why does R need one?
+ - Why does R have so many object systems?
+ - How do I know what object system is relevant for my work?
+ - How do I interact with the most common object systems?
+
